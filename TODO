@@ -1,4 +1,11 @@
 - use lib-ruler (this is needed to work with height ruler)
+- build system for releases
+    - Use webpack or something else?
+- register with foundryvtt modules?
+- Block movement through hostiles? Make it a setting?
 - Use drag ruler dynamically (or implement my own path finding?)
+    - At the very least have the highlight color change based on movement speed?
 - Use terrain ruler dynamically (or implement my own version?)
 - Allow for multiple token control?
+- Incorporate token size for purposes of moving through others?
+- Have a grid of movement, based on speed, show up when starting your move?
