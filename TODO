@@ -1,0 +1,4 @@
+- use lib-ruler (this is needed to work with height ruler)
+- Use drag ruler dynamically (or implement my own path finding?)
+- Use terrain ruler dynamically (or implement my own version?)
+- Allow for multiple token control?

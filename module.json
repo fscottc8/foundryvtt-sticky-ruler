@@ -1,0 +1,17 @@
+{
+    "name": "sticky-ruler",
+    "title": "Sticky Ruler",
+    "description": "TODO",
+    "author": "fscottc8",
+    "version": "0.0.1",
+    "minimumCoreVersion": "9",
+    "esmodules": [
+        "dist/sticky-ruler.js"
+    ],
+    "url": "http://127.0.0.1:8000/foundryvtt-sticky-ruler",
+    "download": "http://127.0.0.1:8000/foundryvtt-sticky-ruler/foundryvtt-sticky-ruler.zip",
+    "manifest": "http://127.0.0.1:8000/foundryvtt-sticky-ruler/module.json",
+    "readme": "http://127.0.0.1:8000/foundryvtt-sticky-ruler/README.md",
+    "changelog": "http://127.0.0.1:8000/foundryvtt-sticky-ruler/CHANGELOG.md",
+    "bugs": "https://github.com/fscottc8/foundryvtt-sticky-ruler/issues"
+}
