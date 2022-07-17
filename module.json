@@ -4,6 +4,7 @@
     "description": "TODO",
     "author": "fscottc8 | Scott <fscottc8@gmail.com>",
     "version": "0.1.0",
+    "minimumCoreVersion": "0.5.0",
     "minimumCoreVersion": "9",
     "esmodules": [
         "dist/sticky-ruler.js"
