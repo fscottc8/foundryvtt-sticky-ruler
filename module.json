@@ -9,7 +9,7 @@
         "dist/sticky-ruler.js"
     ],
     "url": "https://github.com/fscottc8/foundryvtt-sticky-ruler",
-    "download": "https://github.com/fscottc8/foundryvtt-sticky-ruler/releases/v0.1.0/sticky-ruler-v0.1.0.zip",
+    "download": "https://github.com/fscottc8/foundryvtt-sticky-ruler/releases/download/v0.1.0/sticky-ruler-v0.1.0.zip",
     "manifest": "https://raw.githubusercontent.com/fscottc8/foundryvtt-sticky-ruler/main/module.json",
     "readme": "https://github.com/fscottc8/foundryvtt-sticky-ruler/blob/main/README.md",
     "changelog": "https://github.com/fscottc8/foundryvtt-sticky-ruler/blob/main/CHANGELOG.md",
