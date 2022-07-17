@@ -1,10 +1,13 @@
-- use lib-ruler (this is needed to work with height ruler)
+- Add setting for enabling/disabling sticky ruler based on account type and/or account name
 - build system for releases
-    - Use webpack or something else?
+    - Use webpack or something else? git automations?
 - register with foundryvtt modules?
-- Block movement through hostiles? Make it a setting?
+
+- use lib-ruler? (this is needed to work with height ruler)
 - Use drag ruler dynamically (or implement my own path finding?)
     - At the very least have the highlight color change based on movement speed?
+    - Keep track of movement within a combat round?
+- Block movement through hostiles (based on size difference)? Make it a setting?
 - Use terrain ruler dynamically (or implement my own version?)
 - Allow for multiple token control?
 - Incorporate token size for purposes of moving through others?
