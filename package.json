@@ -1,0 +1,29 @@
+{
+  "name": "sticky-ruler",
+  "version": "0.1.0",
+  "description": "TODO",
+  "main": "src/sticky-ruler.js",
+  "scripts": {
+    "build": "webpack --config webpack.config.js --mode production",
+    "dev": "webpack --config webpack.config.js --watch --mode development --devtool inline-cheap-module-source-map",
+    "version": "node automation/release.js && git add module.json",
+    "postversion": "git push && git push --tags",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/fscottc8/foundryvttstickyruler.git"
+  },
+  "keywords": [
+    "FoundryVTT"
+  ],
+  "author": "Scott <fscottc8@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/fscottc8/foundryvtt-sticky-ruler"
+  },
+  "homepage": "https://github.com/fscottc8/foundryvtt-sticky-ruler#readme",
+  "devDependencies": {
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.0"
+  }
+}
