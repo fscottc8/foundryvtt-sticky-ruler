@@ -1,7 +1,4 @@
-- Add setting for enabling/disabling sticky ruler based on account type and/or account name
-- build system for releases
-    - Use webpack or something else? git automations?
-- register with foundryvtt modules?
+- Continue using webpack?
 
 - use lib-ruler? (this is needed to work with height ruler)
 - Use drag ruler dynamically (or implement my own path finding?)
@@ -12,3 +9,4 @@
 - Allow for multiple token control?
 - Incorporate token size for purposes of moving through others?
 - Have a grid of movement, based on speed, show up when starting your move?
+- register with foundryvtt modules?
