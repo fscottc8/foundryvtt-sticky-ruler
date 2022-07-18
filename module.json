@@ -1,7 +1,7 @@
 {
     "name": "sticky-ruler",
     "title": "Sticky Ruler",
-    "description": "TODO",
+    "description": "Changes default Ruler behavior to left click to add waypoints and to move tokens",
     "author": "fscottc8 | Scott <fscottc8@gmail.com>",
     "version": "0.1.0",
     "minimumCoreVersion": "0.5.0",
