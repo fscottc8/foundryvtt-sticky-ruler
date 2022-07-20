@@ -65,15 +65,14 @@ async function rulerLeftClick(wrapped, event, ...args) {
 	addRulerWaypoint(this, event, centerPoint, false);
 	const currWaypoint = this.waypoints.pop();
 
-
-	// TODO CLEANUP
-	const currWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
-	const waypointIndex = currWaypoints.findIndex((waypoint) => waypoint.equals(currWaypoint));
+	// THIS IS OK EVEN WITHOUT THE ADDON; clean up code and make it only work during combat! THIS STILL DOES NOT WORK WELL WITH DRAG RULER; the range counting gets messed up
+	let currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
+	const waypointIndex = currentWaypoints.findIndex((waypoint) => waypoint.equals(currWaypoint));
 
 	if (waypointIndex == -1)
 	{
 		// If we are moving a token, check for collision
-		if (this.tokenToMove != null && rulerCollision(this, currWaypoint)) {
+		if (false && this.tokenToMove != null && rulerCollision(this, currWaypoint)) {
 			// Collision found, print error message and do not add waypoint
 			ui.notifications.error("ERROR.TokenCollide", {localize: true});
 		} else {
@@ -87,9 +86,9 @@ async function rulerLeftClick(wrapped, event, ...args) {
 			// Collision wasn't found, add a new waypoint
 			addRulerWaypoint(this, event, currWaypoint);
 		}
-	} else if (waypointIndex == (currWaypoints.length - 1)) {
+	} else if (waypointIndex == (currentWaypoints.length - 1)) {
 		// If this is the last waypoint again, move the token and clear movement
-		if (this.tokenToMove && currWaypoints.length == 1) {
+		if (this.tokenToMove && currentWaypoints.length == 1) {
 			// There was only a single waypoint on the token itself, so deselect the token
 			this.tokenToMove.release();
 		}
@@ -98,12 +97,13 @@ async function rulerLeftClick(wrapped, event, ...args) {
 		this.draggedEntity = null;
 
 
-		// HISTORY TEST
+		// HISTORY TEST TODO CLEAN UP!!!!
 		const allWaypoints = [...this.waypoints];
-		const currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
-		this.dragRulerClearWaypoints();
+		currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
+		// this.dragRulerClearWaypoints();
+		clearWaypoints(this);
 		for (const waypoint of currentWaypoints) {
-			addRulerWaypoint(this, event, waypoint);
+			addRulerWaypoint(this, event, waypoint, false);
 		}
 		const test = currentWaypoints.pop()
 		// END TEST BLOCK
@@ -115,7 +115,8 @@ async function rulerLeftClick(wrapped, event, ...args) {
 			this._endMeasurement();
 		} else {
 			// TODO: History waypoint test
-			this.dragRulerAddWaypointHistory(allWaypoints);
+			// this.dragRulerAddWaypointHistory(allWaypoints);
+			addWaypointHistory(this, allWaypoints);
 			this._state = Ruler.STATES.MEASURING;
 			this.draggedEntity = this.tokenToMove;
 			addRulerWaypoint(this, event, test);
@@ -133,6 +134,18 @@ async function rulerLeftClick(wrapped, event, ...args) {
 	return wrapped(event, ...args);
 }
 
+function clearWaypoints(ruler) {
+	ruler.waypoints = [];
+	ruler.labels.removeChildren().forEach(c => c.destroy());
+}
+
+function addWaypointHistory(ruler, waypoints) {
+	waypoints.forEach(waypoint => waypoint.isPrevious = true);
+	ruler.waypoints = ruler.waypoints.concat(waypoints);
+	for (const waypoint of waypoints) {
+		ruler.labels.addChild(new PreciseText("", CONFIG.canvasTextStyle));
+	}
+}
 
 function recalculateWaypoints(ruler, event, point) {
 	ruler.destination = point;
