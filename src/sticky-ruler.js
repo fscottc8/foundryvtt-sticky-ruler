@@ -16,7 +16,6 @@ Hooks.on('ready', function() {
 })
 
 function rulerEndMeasurement(wrapped, event, ...args) {
-	// Clear the dragged entity
 	this.draggedEntity = null;
 	return wrapped(event, ...args);
 }
@@ -27,16 +26,19 @@ async function rulerLeftClick(wrapped, event, ...args) {
 		return wrapped(event, ...args);
 	}
 
-	// Find the center point
+	// If this is a gridless map, and the setting is off, return immediately
+	if (canvas.grid.type == CONST.GRID_TYPES.GRIDLESS && game.settings.get(MODULE_NAME, "gridlessDisabled")) {
+		return wrapped(event, ...args);
+	}
+
+	// Find the center point of the grid space that was clicked on
 	const center = canvas.grid.getCenter(event.data.origin.x, event.data.origin.y);
 	const centerPoint = new PIXI.Point(center[0], center[1]);
 
 	const token = event.target
 	if (token instanceof Token && token.owner && this.waypoints.length == 0) {
-		// Is this ruler being used to measure from a token
 		token.control();
-		this._onDragStart(event);
-		this.measure(centerPoint);
+		this.tokenToMove = token;
 		this.draggedEntity = token;
 
 		// If terrain-ruler is installed, enable it and the terrain
@@ -45,49 +47,125 @@ async function rulerLeftClick(wrapped, event, ...args) {
 			this.isTerrainRuler = true;
 		}
 
-		broadcastRulerUpdate(this, event);
+		// If drag-ruler is installed, enable it
+		if (game.modules.get("drag-ruler")?.active) {
+			this.rulerOffset = {x: 0, y: 0};
+			this.dragRulerStart();
+		} else {
+			this._onDragStart(event);
+			this.measure(centerPoint);
+		}
 
+		broadcastRulerUpdate(this, event);
 		return wrapped(event, ...args);
 	}
 
-	// Find the center point and see if it's already a waypoint
-	const location = this.waypoints.findIndex((waypoint) => waypoint.equals(centerPoint));
+	// Add, then pop, a waypoint, to compare against previously added waypoints
+	// This is done in case any other rulers are doing adjustments for waypoint locations
+	addRulerWaypoint(this, event, centerPoint, false);
+	const currWaypoint = this.waypoints.pop();
 
-	if (location == -1)
+
+	// TODO CLEANUP
+	const currWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
+	const waypointIndex = currWaypoints.findIndex((waypoint) => waypoint.equals(currWaypoint));
+
+	if (waypointIndex == -1)
 	{
-		// If we are dragging a token, check for collision
-		if (this.draggedEntity != null && rulerCollision(this, centerPoint)) {
+		// If we are moving a token, check for collision
+		if (this.tokenToMove != null && rulerCollision(this, currWaypoint)) {
 			// Collision found, print error message and do not add waypoint
 			ui.notifications.error("ERROR.TokenCollide", {localize: true});
 		} else {
+			// If draggedEntity is null and tokenToMove is not, then we know this
+			// is a new ruler that is not for a token, so clear the token selection
+			if (this.draggedEntity == null && this.tokenToMove != null) {
+				this.tokenToMove.release();
+				this.tokenToMove = null;
+			}
+
 			// Collision wasn't found, add a new waypoint
-			this._state = Ruler.STATES.MEASURING;
-			this._addWaypoint(centerPoint);
-			this.measure(centerPoint);
-			broadcastRulerUpdate(this, event);
+			addRulerWaypoint(this, event, currWaypoint);
 		}
-	} else if (location == (this.waypoints.length - 1)) {
+	} else if (waypointIndex == (currWaypoints.length - 1)) {
 		// If this is the last waypoint again, move the token and clear movement
-		if (this.draggedEntity && this.waypoints.length == 1) {
+		if (this.tokenToMove && currWaypoints.length == 1) {
 			// There was only a single waypoint on the token itself, so deselect the token
-			this.draggedEntity.release();
+			this.tokenToMove.release();
 		}
 
-		// Move the token
+		// This is needed so that Drag-Ruler doesn't block the call to moveToken()
 		this.draggedEntity = null;
+
+
+		// HISTORY TEST
+		const allWaypoints = [...this.waypoints];
+		const currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
+		this.dragRulerClearWaypoints();
+		for (const waypoint of currentWaypoints) {
+			addRulerWaypoint(this, event, waypoint);
+		}
+		const test = currentWaypoints.pop()
+		// END TEST BLOCK
+
+
+		// Move the token
 		let result = await this.moveToken();
 		if (result == false) {
 			this._endMeasurement();
+		} else {
+			// TODO: History waypoint test
+			this.dragRulerAddWaypointHistory(allWaypoints);
+			this._state = Ruler.STATES.MEASURING;
+			this.draggedEntity = this.tokenToMove;
+			addRulerWaypoint(this, event, test);
+			// recalculateWaypoints(this, event, test);
+			// end test block
 		}
 	} else {
 		// This is a previous waypoint, remove all after it
-		const diff = this.waypoints.length - location - 1;
+		const diff = this.waypoints.length - waypointIndex - 1;
 		for (var i = 0; i < diff; i++) {
-			this._removeWaypoint(centerPoint);
+			removeRulerWaypoint(this, event, currWaypoint);
 		}
 	}
 
 	return wrapped(event, ...args);
+}
+
+
+function recalculateWaypoints(ruler, event, point) {
+	ruler.destination = point;
+	ruler.measure(ruler.destination);
+	broadcastRulerUpdate(ruler, event);
+}
+
+function addRulerWaypoint(ruler, event, point, recalculate = true) {
+	ruler._state = Ruler.STATES.MEASURING;
+
+	if (game.modules.get("drag-ruler")?.active) {
+		ruler.dragRulerAddWaypoint(point);
+	} else {
+		ruler._addWaypoint(point);
+	}
+
+	if (recalculate) {
+		recalculateWaypoints(ruler, event, point);
+	}
+}
+
+function removeRulerWaypoint(ruler, event, point, recalculate = true) {
+	ruler._state = Ruler.STATES.MEASURING;
+
+	if (game.modules.get("drag-ruler")?.active) {
+		ruler.dragRulerDeleteWaypoint();
+	} else {
+		ruler._removeWaypoint(point);
+	}
+
+	if (recalculate) {
+		recalculateWaypoints(ruler, event, point);
+	}
 }
 
 function isHostileToken(token) {
