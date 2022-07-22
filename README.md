@@ -5,7 +5,7 @@ This module changes the default behavior of the ruler in foundryvtt. Whenever th
 Sticky Ruler changes the default ruler behavior as follows:
 - Add a waypoint in the center of a square/hex you left-click on (or where ever you left-click on a gridless map)
   - If the first waypoint added is on a token, the token will also be selected, and all other entities will be deselected
-  -
+  - If the first waypoint added is not on a token, all tokens will be deselected.
 - If you left-click the most recent waypoint that was added, the ruler is removed
   - If your first waypoint was on a token, it will move the token along the ruler path
   - If your first and last (only) waypoint is on a token, the token will also be deselected

@@ -10,10 +10,20 @@ Hooks.on('ready', function() {
 	try {
 		libWrapper.register(MODULE_NAME, 'Ruler.prototype._onClickLeft', rulerLeftClick, "WRAPPER");
 		libWrapper.register(MODULE_NAME, 'Ruler.prototype._endMeasurement', rulerEndMeasurement, "WRAPPER");
+		libWrapper.register(MODULE_NAME, 'Game.prototype.activeTool', forceRuler, "MIXED");
 	} catch (e) {
 		console.error(`Failed to initialize ${MODULE_NAME}: `, e);
 	}
 })
+
+// Temporary solution to force the player touch table to use only the ruler
+function forceRuler(wrapped, event, ...args) {
+    if (!game.user.isGM && game.settings.get(MODULE_NAME, "forceRuler")) {
+        return "ruler";
+    }
+
+    return wrapped(event, ...args);
+}
 
 function rulerEndMeasurement(wrapped, event, ...args) {
 	this.draggedEntity = null;
@@ -60,19 +70,20 @@ async function rulerLeftClick(wrapped, event, ...args) {
 		return wrapped(event, ...args);
 	}
 
-	// Add, then pop, a waypoint, to compare against previously added waypoints
-	// This is done in case any other rulers are doing adjustments for waypoint locations
+	// Add, then remove, a waypoint to compare against previously added waypoints
+	// This is done in case any other rulers are making adjustments to waypoint positions
 	addRulerWaypoint(this, event, centerPoint, false);
 	const currWaypoint = this.waypoints.pop();
+	this.labels.removeChild(this.labels.children.pop());
 
-	// THIS IS OK EVEN WITHOUT THE ADDON; clean up code and make it only work during combat! THIS STILL DOES NOT WORK WELL WITH DRAG RULER; the range counting gets messed up
-	let currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
+	// Find, and index, an array of the current waypoints, to see if the current waypoint overlaps
+	const currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
 	const waypointIndex = currentWaypoints.findIndex((waypoint) => waypoint.equals(currWaypoint));
 
 	if (waypointIndex == -1)
 	{
 		// If we are moving a token, check for collision
-		if (false && this.tokenToMove != null && rulerCollision(this, currWaypoint)) {
+		if (this.tokenToMove != null && rulerCollision(this, currentWaypoints, currWaypoint)) {
 			// Collision found, print error message and do not add waypoint
 			ui.notifications.error("ERROR.TokenCollide", {localize: true});
 		} else {
@@ -91,41 +102,36 @@ async function rulerLeftClick(wrapped, event, ...args) {
 		if (this.tokenToMove && currentWaypoints.length == 1) {
 			// There was only a single waypoint on the token itself, so deselect the token
 			this.tokenToMove.release();
+			this.tokenToMove = null;
 		}
 
 		// This is needed so that Drag-Ruler doesn't block the call to moveToken()
 		this.draggedEntity = null;
 
-
-		// HISTORY TEST TODO CLEAN UP!!!!
+		// Get a copy of all waypoints to be added as a "history" later
 		const allWaypoints = [...this.waypoints];
-		currentWaypoints = this.waypoints.filter(waypoint => !waypoint.isPrevious);
-		// this.dragRulerClearWaypoints();
+
+		// Clear all waypoints and re-add the "current" ones
 		clearWaypoints(this);
 		for (const waypoint of currentWaypoints) {
 			addRulerWaypoint(this, event, waypoint, false);
 		}
-		const test = currentWaypoints.pop()
-		// END TEST BLOCK
-
+		const currentLocation = currentWaypoints.pop()
 
 		// Move the token
 		let result = await this.moveToken();
 		if (result == false) {
 			this._endMeasurement();
 		} else {
-			// TODO: History waypoint test
-			// this.dragRulerAddWaypointHistory(allWaypoints);
+			// Add all the waypoints as history; Reinitialze the ruler
 			addWaypointHistory(this, allWaypoints);
 			this._state = Ruler.STATES.MEASURING;
 			this.draggedEntity = this.tokenToMove;
-			addRulerWaypoint(this, event, test);
-			// recalculateWaypoints(this, event, test);
-			// end test block
+			addRulerWaypoint(this, event, currentLocation);
 		}
 	} else {
 		// This is a previous waypoint, remove all after it
-		const diff = this.waypoints.length - waypointIndex - 1;
+		const diff = currentWaypoints.length - waypointIndex - 1;
 		for (var i = 0; i < diff; i++) {
 			removeRulerWaypoint(this, event, currWaypoint);
 		}
@@ -188,8 +194,8 @@ function isHostileToken(token) {
 	return token.data.disposition == CONST.TOKEN_DISPOSITIONS.HOSTILE;
 }
 
-function rulerCollision(ruler, point) {
-	let rays = ruler._getRaysFromWaypoints(ruler.waypoints.slice(-1), point);
+function rulerCollision(ruler, waypoints, point) {
+	let rays = ruler._getRaysFromWaypoints(waypoints.slice(-1), point);
 	return rays.some(r => canvas.walls.checkCollision(r));
 }
 

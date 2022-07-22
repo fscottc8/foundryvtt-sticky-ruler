@@ -18,4 +18,13 @@ export function registerSettings() {
         type: Boolean,
         default: true,
     });
+
+    game.settings.register(MODULE_NAME, "forceRuler", {
+        name: "Force ruler on Players",
+        hint: `Only allow players to use the Ruler tool`,
+        scope: "server",
+        config: true,
+        type: Boolean,
+        default: true,
+    });
 }
